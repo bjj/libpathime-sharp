@@ -96,6 +96,10 @@ style), Ctrl+E cycles engines, Ctrl+T commits, Ctrl+R discards. The engine key
 (top left) also switches on tap. It finds the native library the same way the
 tests do: `PATHIME_LIBRARY` or the staged `artifacts\native\<rid>\` copy.
 
+On Linux, CJK text renders as boxes unless a CJK font is installed — e.g.
+`apt install fonts-noto-cjk` on Debian/Ubuntu. This applies to any Linux app
+displaying libpathime output, not just the demo.
+
 ## Unity
 
 `unity/com.ben.pathime` is a Unity package (UPM) containing the same binding
