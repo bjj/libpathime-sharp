@@ -24,6 +24,9 @@ namespace PathimeSharp.Interop
     {
         private static readonly object Gate = new object();
         private static bool _loaded;
+#if NET8_0_OR_GREATER
+        private static bool _resolverRegistered;
+#endif
 
         /// <summary>The path the library was loaded from, if an explicit one was used.</summary>
         internal static string? LoadedPath { get; private set; }
@@ -48,9 +51,22 @@ namespace PathimeSharp.Interop
                         "; Pathime.Load must be called before any other Pathime API.");
                 }
 
+                RegisterResolver();
                 LoadFrom(path);
-                Sanity(path);
+                // Set before Sanity: on Linux the DllImport("pathime") probe
+                // does not find a library loaded by absolute path — the
+                // resolver bridges by this path.
                 LoadedPath = path;
+                try
+                {
+                    Sanity(path);
+                }
+                catch
+                {
+                    LoadedPath = null;
+                    throw;
+                }
+
                 _loaded = true;
             }
         }
@@ -73,9 +89,7 @@ namespace PathimeSharp.Interop
                     return;
                 }
 
-#if NET8_0_OR_GREATER
-                NativeLibrary.SetDllImportResolver(typeof(LibraryLoader).Assembly, Resolve);
-#endif
+                RegisterResolver();
                 string? envPath = Environment.GetEnvironmentVariable("PATHIME_LIBRARY");
                 if (!string.IsNullOrEmpty(envPath))
                 {
@@ -90,6 +104,17 @@ namespace PathimeSharp.Interop
                 Sanity(envPath);
                 _loaded = true;
             }
+        }
+
+        private static void RegisterResolver()
+        {
+#if NET8_0_OR_GREATER
+            if (!_resolverRegistered)
+            {
+                NativeLibrary.SetDllImportResolver(typeof(LibraryLoader).Assembly, Resolve);
+                _resolverRegistered = true;
+            }
+#endif
         }
 
         private static void Sanity(string? path)

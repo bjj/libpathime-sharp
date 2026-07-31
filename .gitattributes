@@ -1,0 +1,11 @@
+# Normalize to LF in the repository regardless of core.autocrlf. The
+# libpathime submodule's dictionary codegen is LF-sensitive, and the shell
+# scripts must be LF to run at all.
+* text=auto
+*.sh text eol=lf
+*.sln text eol=crlf
+
+# Never diff or normalize binaries that may appear later.
+*.png binary
+*.dll binary
+*.so binary

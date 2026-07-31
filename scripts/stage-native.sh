@@ -8,8 +8,11 @@ set -euo pipefail
 
 prefix="${1:?usage: stage-native.sh <cmake-install-prefix> [nuget|unity|tests ...]}"
 shift
-targets=("${@:-nuget unity tests}")
-[ $# -eq 0 ] && targets=(nuget unity tests)
+if [ $# -eq 0 ]; then
+    targets=(nuget unity tests)
+else
+    targets=("$@")
+fi
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 rid=linux-x64
@@ -18,7 +21,7 @@ lib_dir="$prefix/lib"
 data_dir="$lib_dir/pathime-data"
 vendored_dir="$lib_dir/pathime"
 
-[ -e "$lib_dir"/libpathime.so* ] || {
+ls "$lib_dir"/libpathime.so* >/dev/null 2>&1 || {
     echo "error: no libpathime.so under '$lib_dir' — point at a cmake --install prefix" >&2; exit 1; }
 [ -d "$data_dir" ] || {
     echo "error: no pathime-data under '$lib_dir' — a bare build tree stages no dictionaries; run 'cmake --install'" >&2; exit 1; }
