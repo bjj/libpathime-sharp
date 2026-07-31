@@ -1,9 +1,10 @@
 refs/
 
-# CMake build output (out-of-source builds live here)
+# CMake build output (out-of-source builds live here), anchored to the root so
+# nested folders named build* (e.g. packaging/**/buildTransitive/) survive
 /build/
-build*/
-cmake-build-*/
+/build*/
+/cmake-build-*/
 
 # Stray in-source CMake artifacts (in-source builds are rejected, but just in case)
 CMakeCache.txt
@@ -19,3 +20,14 @@ CMakeUserPresets.json
 # python
 *.pyc
 __pycache__/
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+*.nupkg
+
+# Staged native binaries and dictionary data — never committed
+/artifacts/
+unity/com.ben.pathime/Plugins/

@@ -22,6 +22,7 @@ SOFTWARE.
 
 ---
 
-The MIT licence above covers the libpathime-sharp source in this repository.
-
-See the submodules for their own licensing information.
+The MIT licence above covers the PathimeSharp binding source in this package.
+Native libpathime binaries and dictionary data, when staged into `Plugins/`,
+carry their own licences (LGPL-2.1 backends, GPL-derived data) — see
+libpathime's THIRD-PARTY.md.

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <RootNamespace>PathimeSharp</RootNamespace>
+    <AssemblyName>PathimeSharp</AssemblyName>
+    <PackageId>PathimeSharp</PackageId>
+    <Version>0.1.0</Version>
+    <Description>C# binding for libpathime — CJK input method engines (Hangul, Anthy, Pinyin/Bopomofo, table-driven) behind one synchronous API.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- CS1591: don't require XML docs on every public member (enum values etc.) -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <!-- Canonical source lives in the Unity package so UPM git-URL consumers get
+         real committed files; this project compiles the same files. -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\unity\com.ben.pathime\Runtime\Core\**\*.cs" LinkBase="Core" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

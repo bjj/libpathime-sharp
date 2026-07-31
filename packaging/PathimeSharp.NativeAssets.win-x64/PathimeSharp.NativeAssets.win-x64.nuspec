@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Packs the staged native payload from artifacts/nuget/win-x64/ (run
+scripts/stage-native.ps1 first). NOT PUBLISHED YET: blocked on CI-built
+binaries and a completed THIRD-PARTY.md (see TODO.md).
+
+Pack with:
+  nuget pack packaging/PathimeSharp.NativeAssets.win-x64/PathimeSharp.NativeAssets.win-x64.nuspec -OutputDirectory artifacts
+-->
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>PathimeSharp.NativeAssets.win-x64</id>
+    <version>0.1.0</version>
+    <authors>Ben Jackson</authors>
+    <description>Native libpathime binaries and dictionary data (win-x64) for PathimeSharp: pathime.dll, its vendored backend libraries (libhangul, anthy-unicode, pyzy and their dependencies), and the pathime-data dictionaries. Reference alongside the PathimeSharp package. Contains LGPL-2.1 components and GPL-derived data files; see THIRD-PARTY.md.</description>
+    <license type="file">THIRD-PARTY.md</license>
+    <projectUrl>https://github.com/bjj/libpathime-sharp</projectUrl>
+    <tags>ime input-method cjk native pathime</tags>
+  </metadata>
+  <files>
+    <file src="..\..\artifacts\nuget\win-x64\native\*.dll" target="runtimes\win-x64\native\" />
+    <!-- data/ is a non-convention folder: NuGet treats nothing here as an
+         asset; the buildTransitive targets copy the tree to the output. -->
+    <file src="..\..\artifacts\nuget\win-x64\data\pathime-data\**" target="data\pathime-data\" />
+    <file src="buildTransitive\PathimeSharp.NativeAssets.win-x64.targets" target="buildTransitive\" />
+    <file src="THIRD-PARTY.md" target="" />
+  </files>
+</package>

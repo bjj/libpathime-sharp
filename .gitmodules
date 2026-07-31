@@ -1,0 +1,3 @@
+[submodule "libpathime"]
+	path = libpathime
+	url = ssh://git@orion.local:222/bjj/libpathime.git

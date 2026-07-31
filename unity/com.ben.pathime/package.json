@@ -1,0 +1,10 @@
+{
+  "name": "com.ben.pathime",
+  "version": "0.1.0",
+  "displayName": "PathimeSharp",
+  "description": "C# binding for libpathime — CJK input method engines (Hangul, Anthy, Pinyin/Bopomofo, table-driven) behind one synchronous API. Desktop platforms; native libraries staged separately.",
+  "unity": "2021.3",
+  "license": "MIT",
+  "author": { "name": "Ben Jackson", "url": "https://ben.com" },
+  "keywords": ["ime", "input-method", "cjk", "hangul", "anthy", "pinyin", "bopomofo"]
+}

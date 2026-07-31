@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <!-- The binding source is shared with the Unity package (unity/com.ben.pathime),
+         so it must compile under Unity 2021.3's compiler: C# 9, no records, no
+         init-only setters. -->
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Authors>Ben Jackson</Authors>
+    <Copyright>Copyright (c) 2026 Ben Jackson</Copyright>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+</Project>
