@@ -1,0 +1,14 @@
+{
+    "name": "PathimeSharp.Unity.Editor",
+    "rootNamespace": "PathimeSharp.Unity.Editor",
+    "references": ["PathimeSharp", "PathimeSharp.Unity"],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

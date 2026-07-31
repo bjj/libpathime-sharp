@@ -1,0 +1,14 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- pathime-data must sit beside pathime.dll at runtime. The DLLs flow
+       through the standard runtimes/win-x64/native mechanism; the dictionary
+       tree is copied by this target because runtimes/native subtree handling
+       is not reliable across SDKs (see repo TODO.md). -->
+  <ItemGroup>
+    <PathimeDataFiles Include="$(MSBuildThisFileDirectory)..\data\pathime-data\**\*" />
+  </ItemGroup>
+  <Target Name="CopyPathimeData" AfterTargets="Build" Condition="'@(PathimeDataFiles)' != ''">
+    <Copy SourceFiles="@(PathimeDataFiles)"
+          DestinationFiles="@(PathimeDataFiles->'$(OutDir)pathime-data\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>
