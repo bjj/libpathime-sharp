@@ -18,7 +18,10 @@
 
 All three packages (`PathimeSharp`, `PathimeSharp.NativeAssets.win-x64`,
 `.linux-x64`) on NuGet.org, pushed by the `v0.1.0` tag through
-`release.yml` (Trusted Publishing); GitHub Release published; CI green on
+`release.yml` (Trusted Publishing); GitHub Release published, carrying the
+nupkgs and a self-contained win-x64 demo bundle (retrofitted onto v0.1.0;
+future tags build it in the workflow — a linux demo bundle would be the
+same recipe on the other runner if ever wanted); CI green on
 `windows-2022` + `ubuntu-22.04`. libpathime submodule pinned at its
 `v0.1.0` tag.
 

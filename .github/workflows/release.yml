@@ -8,8 +8,9 @@ permissions:
   contents: write
 
 # Tag vX.Y.Z → build natives (same cache as CI, via the shared action),
-# pack everything, push PathimeSharp to NuGet, and open a DRAFT GitHub
-# Release carrying all three nupkgs for review before publishing.
+# pack everything, push the packages to NuGet, and open a DRAFT GitHub
+# Release carrying the three nupkgs and the runnable demo bundle for
+# review before publishing.
 #
 # NuGet auth is Trusted Publishing (OIDC), not a stored API key: a policy
 # on nuget.org (owner bjj / repo libpathime-sharp / workflow release.yml)
@@ -104,6 +105,21 @@ jobs:
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: ${{ secrets.NUGET_USER }}
+      # The runnable demo: self-contained publish (no SDK needed to run it),
+      # with the staged natives, dictionaries and notices flat beside the
+      # exe — pathime.dll loads via default probing from the exe directory.
+      - name: Bundle the demo (win-x64, self-contained)
+        shell: pwsh
+        run: |
+          $bundle = "artifacts/demo/PathimeSharp.Demo-${{ steps.ver.outputs.version }}-win-x64"
+          dotnet publish demo/PathimeSharp.Demo -c Release -r win-x64 --self-contained true -v q -o $bundle
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Copy-Item artifacts/nuget/win-x64/native/*.dll $bundle/
+          Copy-Item -Recurse artifacts/nuget/win-x64/data/pathime-data $bundle/pathime-data
+          Copy-Item -Recurse artifacts/nuget/win-x64/licenses $bundle/licenses
+          Copy-Item packaging/demo/THIRD-PARTY.md $bundle/
+          Compress-Archive -Path $bundle -DestinationPath "artifacts/release/PathimeSharp.Demo-${{ steps.ver.outputs.version }}-win-x64.zip"
+
       # pwsh enumerates the nupkgs itself: dotnet nuget push does not expand
       # the * glob on Windows and fails with "File does not exist".
       - name: Push packages to NuGet
@@ -124,4 +140,4 @@ jobs:
           --draft
           --title "$GITHUB_REF_NAME"
           --generate-notes
-          artifacts/release/*.nupkg
+          artifacts/release/*.nupkg artifacts/release/*.zip
