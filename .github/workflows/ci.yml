@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# The native build recipes mirror libpathime's own CI (libpathime/.github/
+# workflows/ci.yml) — pinned CMake for the same runner-drift reason, the same
+# vcpkg cache split, the same LF-before-checkout rule. What this workflow adds
+# is the install-prefix cache keyed on the submodule commit: a C#-only push
+# restores the finished `cmake --install` tree and never touches CMake at all.
+env:
+  CMAKE_VERSION: 4.2.3
+
+jobs:
+  test:
+    name: ${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ matrix.timeout }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # windows-2022, not -latest: the windows-msvc preset pins the
+          # Visual Studio 17 generator and the 2025 image ships only 18.
+          # The preset's serial build (jobs:1) makes a cache-miss run slow,
+          # but only a submodule bump misses.
+          - os: windows-2022
+            rid: win-x64
+            timeout: 90
+          # 22.04 deliberately trails upstream's 24.04: the .so this job
+          # stages is what PathimeSharp.NativeAssets.linux-x64 will ship,
+          # so build against the oldest glibc still on GitHub's fleet.
+          - os: ubuntu-22.04
+            rid: linux-x64
+            timeout: 30
+    steps:
+      # The runner images configure core.autocrlf=true and the submodule
+      # needs an LF checkout — anthy's dictionary codegen parses tokens with
+      # stray CRs otherwise. Attributes cannot cross the submodule boundary,
+      # so: before checkout.
+      - name: Force LF checkout
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+
+      - name: Resolve submodule pin
+        id: pin
+        shell: bash
+        run: echo "sha=$(git rev-parse HEAD:libpathime)" >> "$GITHUB_OUTPUT"
+
+      # The whole point: the finished install prefix, keyed on the submodule
+      # commit. Exact-match only — a prefix from any other commit is useless.
+      # Bump the -v suffix when the build recipe below changes.
+      - name: Restore native install
+        id: native
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: native-prefix
+          key: native-${{ matrix.rid }}-${{ matrix.os }}-${{ steps.pin.outputs.sha }}-v1
+
+      # ---- native build (cache miss only) ----
+      - uses: jwlawson/actions-setup-cmake@0d6a7d60b009d01c9e7523be22153ff8f19460d3 # v2.2.0
+        if: steps.native.outputs.cache-hit != 'true'
+        with:
+          cmake-version: ${{ env.CMAKE_VERSION }}
+
+      - name: Install native dependencies (apt)
+        if: runner.os == 'Linux' && steps.native.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build pkg-config \
+            libglib2.0-dev libsqlite3-dev uuid-dev
+
+      - name: Resolve vcpkg baseline
+        if: runner.os == 'Windows' && steps.native.outputs.cache-hit != 'true'
+        id: vcpkg
+        run: echo "rev=$(git -C C:\vcpkg rev-parse HEAD)" >> $env:GITHUB_OUTPUT
+      # restore/save rather than the combined action: the combined form saves
+      # only when the whole job succeeds, and a later test failure must not
+      # throw away a from-source glib build (~25 minutes). The prefix
+      # fallback restores the newest previous tree when the image's vcpkg
+      # rev moved, making `vcpkg install` a near-no-op.
+      - name: Restore vcpkg installed tree
+        if: runner.os == 'Windows' && steps.native.outputs.cache-hit != 'true'
+        id: vcpkg-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: C:\vcpkg\installed
+          key: vcpkg-${{ matrix.os }}-${{ steps.vcpkg.outputs.rev }}
+          restore-keys: vcpkg-${{ matrix.os }}-
+      - name: Install pyzy's dependencies (vcpkg)
+        if: runner.os == 'Windows' && steps.native.outputs.cache-hit != 'true'
+        run: vcpkg install glib:x64-windows sqlite3:x64-windows pkgconf:x64-windows
+      - name: Save vcpkg installed tree
+        if: runner.os == 'Windows' && steps.native.outputs.cache-hit != 'true' && steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: C:\vcpkg\installed
+          key: vcpkg-${{ matrix.os }}-${{ steps.vcpkg.outputs.rev }}
+
+      - name: Build and install libpathime (Windows)
+        if: runner.os == 'Windows' && steps.native.outputs.cache-hit != 'true'
+        working-directory: libpathime
+        # VCPKG_ROOT on the step: the preset reads it. The install prefix is
+        # passed at configure time, as the preset's own description requires.
+        env:
+          VCPKG_ROOT: C:\vcpkg
+        # && so a configure failure fails the step: pwsh does not stop on a
+        # native command's exit code mid-step.
+        run: >-
+          cmake --preset windows-msvc "-DCMAKE_INSTALL_PREFIX=${{ github.workspace }}\native-prefix" &&
+          cmake --build --preset windows-msvc &&
+          cmake --install build/windows-msvc --config Release
+
+      - name: Build and install libpathime (Linux)
+        if: runner.os == 'Linux' && steps.native.outputs.cache-hit != 'true'
+        run: |
+          cmake -S libpathime -B libpathime/build/ci -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/native-prefix"
+          cmake --build libpathime/build/ci
+          cmake --install libpathime/build/ci
+
+      # Save immediately: a C# failure later must not discard the native build.
+      - name: Save native install
+        if: steps.native.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: native-prefix
+          key: native-${{ matrix.rid }}-${{ matrix.os }}-${{ steps.pin.outputs.sha }}-v1
+
+      # ---- binding build and tests (every run) ----
+      - name: Stage native (Windows)
+        if: runner.os == 'Windows'
+        run: scripts\stage-native.ps1 -Prefix "${{ github.workspace }}\native-prefix"
+      - name: Stage native (Linux)
+        if: runner.os == 'Linux'
+        run: scripts/stage-native.sh "$GITHUB_WORKSPACE/native-prefix"
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 8.0.x
+
+      # xUnit parallelization is disabled assembly-wide — the library forbids
+      # overlapping calls. Never re-enable it.
+      - name: Test
+        run: dotnet test
+
+      - name: Pack smoke check
+        run: dotnet pack src/PathimeSharp/PathimeSharp.csproj -c Release -o artifacts/pack
+
+      # Input for the release job and for local debugging: the nuspec source
+      # layout (native libs + pathime-data), exactly as staged.
+      - name: Upload staged native tree
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-${{ matrix.rid }}
+          path: artifacts/nuget/${{ matrix.rid }}
+          if-no-files-found: error
