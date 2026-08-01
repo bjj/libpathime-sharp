@@ -56,7 +56,7 @@ Ordered; each step assumes the previous ones.
       packages also ship `licenses/` (per-component texts, staged from the
       install prefix's `share/doc/pathime/` — needs libpathime ≥ v0.1.0).
       **Review the notices before publishing the native packages.**
-- [ ] add a screenshot of the demo
+- [x] add a screenshot of the demo — docs/demo.png, linked from the README
 
 ### Decisions to settle while building the above
 
