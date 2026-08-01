@@ -36,7 +36,10 @@ Ordered; each step assumes the previous ones.
       `v*` tags, natives via the shared `.github/actions/native` (same cache
       as CI), `dotnet pack -p:Version -p:ContinuousIntegrationBuild=true`,
       nuspec pack of both native packages, PathimeSharp pushed to NuGet
-      (`NUGET_API_KEY` secret — **create it before the first tag**), and a
+      via **Trusted Publishing** (before the first tag: on nuget.org add a
+      Trusted Publishing policy — owner `bjj`, repo `libpathime-sharp`,
+      workflow file `release.yml`, no environment — and set the
+      `NUGET_USER` repo secret to the nuget.org profile name), and a
       draft GitHub Release carrying all three nupkgs. The native packages
       are packed and attached but not pushed to NuGet — flip that in
       release.yml once the completed THIRD-PARTY notices have been
