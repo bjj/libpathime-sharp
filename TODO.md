@@ -40,10 +40,9 @@ Ordered; each step assumes the previous ones.
       Trusted Publishing policy — owner `bjj`, repo `libpathime-sharp`,
       workflow file `release.yml`, no environment — and set the
       `NUGET_USER` repo secret to the nuget.org profile name), and a
-      draft GitHub Release carrying all three nupkgs. The native packages
-      are packed and attached but not pushed to NuGet — flip that in
-      release.yml once the completed THIRD-PARTY notices have been
-      reviewed. UPM needs no pipeline: consumers add the git URL
+      draft GitHub Release carrying all three nupkgs. All three push to
+      NuGet — the THIRD-PARTY notices were reviewed 2026-08-01 and the
+      hold-back removed. UPM needs no pipeline: consumers add the git URL
       (`?path=/unity/com.ben.pathime`) and stage natives locally.
 - [x] **THIRD-PARTY notices** — written for both native packages, carrying
       forward `libpathime/THIRD-PARTY.md`: full DLL/.so inventory with the
@@ -51,7 +50,7 @@ Ordered; each step assumes the previous ones.
       GPL-3-as-a-whole statement, corresponding-source pointers. The
       packages also ship `licenses/` (per-component texts, staged from the
       install prefix's `share/doc/pathime/` — needs libpathime ≥ v0.1.0).
-      **Review the notices before publishing the native packages.**
+      Reviewed by Ben 2026-08-01; the release workflow ships all three.
 - [x] add a screenshot of the demo — docs/demo.png, linked from the README
 
 ### Decisions to settle while building the above

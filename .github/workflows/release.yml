@@ -16,9 +16,8 @@ permissions:
 # trades this workflow's OIDC token for a one-hour key at push time. The
 # NUGET_USER secret holds the nuget.org profile name the policy belongs to.
 #
-# The native-assets packages are packed and attached but NOT pushed to
-# NuGet until the THIRD-PARTY.md notices have been reviewed; when they
-# have, add the two native nupkgs to the push step below.
+# All three packages push: the native packages' THIRD-PARTY.md notices
+# were completed and reviewed (2026-08-01) before this was enabled.
 
 jobs:
   natives:
@@ -105,9 +104,9 @@ jobs:
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: ${{ secrets.NUGET_USER }}
-      - name: Push PathimeSharp to NuGet
+      - name: Push packages to NuGet
         run: >-
-          dotnet nuget push artifacts/release/PathimeSharp.${{ steps.ver.outputs.version }}.nupkg
+          dotnet nuget push "artifacts/release/*.nupkg"
           --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
