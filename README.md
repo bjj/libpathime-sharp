@@ -14,7 +14,7 @@ Repo layout:
   channels use these files:
   - `src/PathimeSharp/` — NuGet/.NET project, compiles the same source.
   - `unity/com.ben.pathime/` — Unity UPM package (git URL:
-    `https://github.com/.../libpathime-sharp.git?path=/unity/com.ben.pathime`).
+    `https://github.com/bjj/libpathime-sharp.git?path=/unity/com.ben.pathime`).
 - `tests/PathimeSharp.Tests/` — xUnit suite for the binding contract.
 - `demo/PathimeSharp.Demo/` — Avalonia phone-keyboard demo.
 - `libpathime/` — the C library, as a git submodule (never modified here).
