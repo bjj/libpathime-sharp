@@ -1,0 +1,111 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+# Tag vX.Y.Z → build natives (same cache as CI, via the shared action),
+# pack everything, push PathimeSharp to NuGet, and open a DRAFT GitHub
+# Release carrying all three nupkgs for review before publishing.
+#
+# The native-assets packages are packed and attached but NOT pushed to
+# NuGet: their THIRD-PARTY.md notices are still the stubs, and the stubs
+# say they must never ship. When the notices are complete, move the two
+# native nupkgs into the push step below.
+
+jobs:
+  natives:
+    name: natives (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ matrix.timeout }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Image choices match ci.yml — same reasoning, and the same cache
+          # keys, so a release tagged on a CI-green commit rebuilds nothing.
+          - os: windows-2022
+            rid: win-x64
+            timeout: 90
+          - os: ubuntu-22.04
+            rid: linux-x64
+            timeout: 30
+    steps:
+      - name: Force LF checkout
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+      - name: Build and stage native libpathime
+        uses: ./.github/actions/native
+        with:
+          rid: ${{ matrix.rid }}
+          image: ${{ matrix.os }}
+      - name: Upload staged native tree
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: native-${{ matrix.rid }}
+          path: artifacts/nuget/${{ matrix.rid }}
+          if-no-files-found: error
+
+  release:
+    needs: natives
+    # windows: nuget.exe is preinstalled, and the nuspecs are packed with it.
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      # The PathimeSharp package is pure managed code compiled from the repo;
+      # the natives arrive as artifacts. No submodules needed.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Version from tag
+        id: ver
+        shell: bash
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Download staged native trees
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: native-*
+          path: artifacts/nuget
+      # download-artifact writes native-<rid>/; the nuspecs read <rid>/.
+      - name: Restore staged tree layout
+        shell: pwsh
+        run: Get-ChildItem artifacts/nuget -Directory | Rename-Item -NewName { $_.Name -replace '^native-', '' }
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Pack PathimeSharp
+        run: >-
+          dotnet pack src/PathimeSharp/PathimeSharp.csproj -c Release
+          -p:Version=${{ steps.ver.outputs.version }}
+          -p:ContinuousIntegrationBuild=true
+          -o artifacts/release
+      - name: Pack native-assets packages
+        run: |
+          nuget pack packaging/PathimeSharp.NativeAssets.win-x64/PathimeSharp.NativeAssets.win-x64.nuspec -Version ${{ steps.ver.outputs.version }} -OutputDirectory artifacts/release -NoDefaultExcludes
+          nuget pack packaging/PathimeSharp.NativeAssets.linux-x64/PathimeSharp.NativeAssets.linux-x64.nuspec -Version ${{ steps.ver.outputs.version }} -OutputDirectory artifacts/release -NoDefaultExcludes
+
+      - name: Push PathimeSharp to NuGet
+        run: >-
+          dotnet nuget push artifacts/release/PathimeSharp.${{ steps.ver.outputs.version }}.nupkg
+          --api-key ${{ secrets.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          --draft
+          --title "$GITHUB_REF_NAME"
+          --generate-notes
+          artifacts/release/*.nupkg
