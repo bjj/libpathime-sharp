@@ -89,6 +89,9 @@ A graphical phone keyboard (Avalonia, so it runs on Windows and Linux):
 dotnet run --project demo\PathimeSharp.Demo
 ```
 
+<img src="docs/demo.png" width="320" alt="The demo composing ni hao in the Pinyin engine, with 你好 leading the candidate strip">
+
+
 Tap the on-screen keys or type on the physical keyboard: letters and space go
 to the engine first, digits 1–9 tap candidates on the strip, ←/→ slide the
 highlight, ↑/↓ page (paging past the end grows the candidate cap, phone
