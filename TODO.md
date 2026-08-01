@@ -1,8 +1,10 @@
 # TODO
 
-## Next session: GitHub upload → CI → release packages
+## Done: GitHub upload → CI → v0.1.0 released
 
-Ordered; each step assumes the previous ones.
+**v0.1.0 shipped 2026-08-01**: all three packages on NuGet.org via the tag
+workflow (Trusted Publishing), draft GitHub Release created — publish it
+after review. Kept as a record; every item below is closed.
 
 - [x] **Publish `libpathime` to GitHub** — live, tagged `v0.1.0`. The
       submodule's `.git/config` keeps orion as remote `local` alongside the
@@ -79,7 +81,7 @@ Ordered; each step assumes the previous ones.
       in all six scenarios (build, `publish -r`, RID-less publish × Windows
       and WSL Linux).
 
-## Later
+## Next
 
 - [ ] IL2CPP smoke test in a real Unity project (callback plumbing is designed
       for it: static thunks + name-matched MonoPInvokeCallback), plus a Unity
