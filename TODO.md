@@ -10,9 +10,9 @@ Ordered; each step assumes the previous ones.
 - [x] **Update the submodule pin** — pinned at tag `v0.1.0` (`7c4d441`);
       84/84 tests pass against a fresh native build of that commit
       (installed at `C:\dev\dist-v0.1.0`).
-- [ ] **Create `github.com/bjj/libpathime-sharp` and push.** README, nuspec
-      `projectUrl`, and `RepositoryUrl` in Directory.Build.props already
-      assume that name. Verify a fresh `git clone --recurse-submodules` works.
+- [x] **Create `github.com/bjj/libpathime-sharp` and push.** Live; a fresh
+      `git clone --recurse-submodules` resolves every submodule from public
+      URLs and `dotnet build` succeeds in the clone.
 - [ ] **CI workflow** (`.github/workflows/ci.yml`) on push/PR:
       - Matrix: `windows-latest` (win-x64), `ubuntu-22.04` (linux-x64).
         Cross-compiling is unsupported upstream (the anthy dictionary is
@@ -31,13 +31,14 @@ Ordered; each step assumes the previous ones.
         re-enable), `dotnet pack` as a smoke check.
       - Upload the staged native trees as build artifacts (input for the
         release job and for local debugging).
-- [ ] **Author `packaging/PathimeSharp.NativeAssets.linux-x64/`** (nuspec +
-      buildTransitive .targets + THIRD-PARTY.md, mirroring win-x64). First
-      settle the .so layout: staging currently dereferences the symlink chain
-      into three copies of each library; the package should ship one real
-      file per SONAME (`libpathime.so.0`, `libhangul.so.1`, …) plus whatever
-      name the loader probes (the net8.0 resolver probes the soname
-      explicitly; `DllImport("pathime")` alone probes only `libpathime.so`).
+- [x] **Author `packaging/PathimeSharp.NativeAssets.linux-x64/`** — done,
+      THIRD-PARTY.md still the stub. Settled .so layout: flat, one real file
+      per SONAME plus `libpathime.so` for DllImport default probing. Flat is
+      sound because every library carries `RUNPATH $ORIGIN` and names its
+      siblings by soname, so the standard `runtimes/linux-x64/native` flow
+      resolves the whole closure — only `pathime-data/` needs the
+      buildTransitive copy. `stage-native.sh` now stages exactly that set
+      (84/84 tests pass on it in WSL; both nuspecs smoke-packed).
 - [ ] **Release workflow** (`.github/workflows/release.yml`) on `v*` tags:
       native builds (same cache), then pack and publish:
       - `PathimeSharp` — `dotnet pack -p:Version=<tag>`
