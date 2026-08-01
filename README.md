@@ -83,7 +83,12 @@ the boundary.
 
 ## Running the demo
 
-A graphical phone keyboard (Avalonia, so it runs on Windows and Linux):
+A graphical phone keyboard (Avalonia, so it runs on Windows and Linux). On
+Windows, a ready-to-run build is attached to each [GitHub
+release](https://github.com/bjj/libpathime-sharp/releases) — download
+`PathimeSharp.Demo-<ver>-win-x64.zip`, extract, run `PathimeSharp.Demo.exe`
+(needs the VC++ 2015–2022 Redistributable, which most machines have). From
+source:
 
 ```powershell
 dotnet run --project demo\PathimeSharp.Demo
