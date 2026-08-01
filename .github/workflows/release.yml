@@ -104,12 +104,16 @@ jobs:
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: ${{ secrets.NUGET_USER }}
+      # pwsh enumerates the nupkgs itself: dotnet nuget push does not expand
+      # the * glob on Windows and fails with "File does not exist".
       - name: Push packages to NuGet
-        run: >-
-          dotnet nuget push "artifacts/release/*.nupkg"
-          --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
-          --source https://api.nuget.org/v3/index.json
-          --skip-duplicate
+        run: |
+          $failed = $false
+          Get-ChildItem artifacts/release/*.nupkg | ForEach-Object {
+            dotnet nuget push $_.FullName --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+            if ($LASTEXITCODE -ne 0) { $failed = $true }
+          }
+          if ($failed) { exit 1 }
 
       - name: Draft GitHub Release
         env:
