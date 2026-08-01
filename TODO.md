@@ -4,14 +4,12 @@
 
 Ordered; each step assumes the previous ones.
 
-- [ ] **Publish `libpathime` to GitHub** (user action, blocks everything):
-      create `github.com/bjj/libpathime`. `.gitmodules` already points at the
-      GitHub URL; local clones keep fetching from orion.local because the old
-      URL is baked into `.git/config` (deliberately not `git submodule
-      sync`ed).
-- [ ] **Update the submodule pin to latest libpathime** before the first
-      push (currently `9311767`), and re-run the test suite against a fresh
-      native build of that commit.
+- [x] **Publish `libpathime` to GitHub** — live, tagged `v0.1.0`. The
+      submodule's `.git/config` keeps orion as remote `local` alongside the
+      GitHub `origin`.
+- [x] **Update the submodule pin** — pinned at tag `v0.1.0` (`7c4d441`);
+      84/84 tests pass against a fresh native build of that commit
+      (installed at `C:\dev\dist-v0.1.0`).
 - [ ] **Create `github.com/bjj/libpathime-sharp` and push.** README, nuspec
       `projectUrl`, and `RepositoryUrl` in Directory.Build.props already
       assume that name. Verify a fresh `git clone --recurse-submodules` works.
