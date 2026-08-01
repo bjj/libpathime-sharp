@@ -10,5 +10,7 @@
     <Authors>Ben Jackson</Authors>
     <Copyright>Copyright (c) 2026 Ben Jackson</Copyright>
     <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/bjj/libpathime-sharp</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/bjj/libpathime-sharp</PackageProjectUrl>
   </PropertyGroup>
 </Project>
