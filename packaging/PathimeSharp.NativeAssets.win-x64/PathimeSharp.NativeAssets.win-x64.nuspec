@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 Packs the staged native payload from artifacts/nuget/win-x64/ (run
-scripts/stage-native.ps1 first). NOT PUBLISHED YET: blocked on CI-built
-binaries and a completed THIRD-PARTY.md (see TODO.md).
+scripts/stage-native.ps1 first). Publish only CI-built binaries (the
+release workflow packs from the CI-staged trees).
 
 Pack with:
   nuget pack packaging/PathimeSharp.NativeAssets.win-x64/PathimeSharp.NativeAssets.win-x64.nuspec -OutputDirectory artifacts
@@ -22,6 +22,7 @@ Pack with:
     <!-- data/ is a non-convention folder: NuGet treats nothing here as an
          asset; the buildTransitive targets copy the tree to the output. -->
     <file src="..\..\artifacts\nuget\win-x64\data\pathime-data\**" target="data\pathime-data\" />
+    <file src="..\..\artifacts\nuget\win-x64\licenses\**" target="licenses\" />
     <file src="buildTransitive\PathimeSharp.NativeAssets.win-x64.targets" target="buildTransitive\" />
     <file src="THIRD-PARTY.md" target="" />
   </files>

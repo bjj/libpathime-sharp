@@ -69,6 +69,18 @@ foreach ($target in $Targets) {
             $data = Join-Path $root "data"
             New-Item -ItemType Directory -Force $data | Out-Null
             Copy-Item -Recurse $dataPath (Join-Path $data "pathime-data")
+            # The package ships the licence text of everything it contains,
+            # as the install prefix does (share/doc/pathime). Installs older
+            # than libpathime v0.1.0 have no licences directory; refuse them
+            # rather than stage a package payload with no notices.
+            $docDir = Join-Path $Prefix "share\doc\pathime"
+            if (-not (Test-Path (Join-Path $docDir "licenses"))) {
+                throw "No licences under '$docDir' - the nuget layout needs a libpathime >= v0.1.0 install."
+            }
+            $lic = Join-Path $root "licenses"
+            New-Item -ItemType Directory -Force $lic | Out-Null
+            Copy-Item (Join-Path $docDir "licenses\*") $lic
+            Copy-Item (Join-Path $docDir "LICENSE") (Join-Path $lic "libpathime.txt")
             Write-Host "  $root"
         }
         "unity" {

@@ -65,6 +65,16 @@ for target in "${targets[@]}"; do
             mkdir -p "$root/native" "$root/data"
             copy_libs "$root/native"
             cp -r "$data_dir" "$root/data/pathime-data"
+            # The package ships the licence text of everything it contains,
+            # as the install prefix does (share/doc/pathime). Installs older
+            # than libpathime v0.1.0 have no licences directory; refuse them
+            # rather than stage a package payload with no notices.
+            doc_dir="$prefix/share/doc/pathime"
+            [ -d "$doc_dir/licenses" ] || {
+                echo "error: no licences under '$doc_dir' — the nuget layout needs a libpathime >= v0.1.0 install" >&2; exit 1; }
+            mkdir -p "$root/licenses"
+            cp "$doc_dir/licenses/"* "$root/licenses/"
+            cp "$doc_dir/LICENSE" "$root/licenses/libpathime.txt"
             echo "  $root"
             ;;
         unity)

@@ -39,30 +39,31 @@ Ordered; each step assumes the previous ones.
       resolves the whole closure — only `pathime-data/` needs the
       buildTransitive copy. `stage-native.sh` now stages exactly that set
       (84/84 tests pass on it in WSL; both nuspecs smoke-packed).
-- [ ] **Release workflow** (`.github/workflows/release.yml`) on `v*` tags:
-      native builds (same cache), then pack and publish:
-      - `PathimeSharp` — `dotnet pack -p:Version=<tag>`
-        (+ `-p:ContinuousIntegrationBuild=true`).
-      - `PathimeSharp.NativeAssets.win-x64` / `.linux-x64` — nuspec pack from
-        the staged trees. **Blocked on THIRD-PARTY.md completion** — ship
-        PathimeSharp alone until the notices are done.
-      - Push to NuGet.org (`NUGET_API_KEY` secret) and attach the nupkgs to a
-        GitHub Release.
-      - UPM needs no pipeline: consumers add the git URL
-        (`?path=/unity/com.ben.pathime`) and stage natives locally.
-- [ ] **THIRD-PARTY notices** for any package that ships binaries/data:
-      carry forward `libpathime/THIRD-PARTY.md` for LGPL-2.1 backends
-      (libhangul, anthy-unicode fork, pyzy fork — fork URLs are the
-      corresponding source), GPL-derived data (anthy.dic, table DBs), and the
-      exact vcpkg DLL closure (glib, pcre2, iconv, intl, sqlite3, …).
+- [x] **Release workflow** (`.github/workflows/release.yml`) authored: on
+      `v*` tags, natives via the shared `.github/actions/native` (same cache
+      as CI), `dotnet pack -p:Version -p:ContinuousIntegrationBuild=true`,
+      nuspec pack of both native packages, PathimeSharp pushed to NuGet
+      (`NUGET_API_KEY` secret — **create it before the first tag**), and a
+      draft GitHub Release carrying all three nupkgs. The native packages
+      are packed and attached but not pushed to NuGet — flip that in
+      release.yml once the completed THIRD-PARTY notices have been
+      reviewed. UPM needs no pipeline: consumers add the git URL
+      (`?path=/unity/com.ben.pathime`) and stage natives locally.
+- [x] **THIRD-PARTY notices** — written for both native packages, carrying
+      forward `libpathime/THIRD-PARTY.md`: full DLL/.so inventory with the
+      vcpkg closure on win-x64, system-library policy on linux-x64,
+      GPL-3-as-a-whole statement, corresponding-source pointers. The
+      packages also ship `licenses/` (per-component texts, staged from the
+      install prefix's `share/doc/pathime/` — needs libpathime ≥ v0.1.0).
+      **Review the notices before publishing the native packages.**
 - [ ] add a screenshot of the demo
 
 ### Decisions to settle while building the above
 
-- [ ] MSVC CRT: start by documenting the VC++ Redistributable requirement
-      (ship no Microsoft runtime DLLs); revisit app-local
-      `msvcp140.dll`/`vcruntime140*.dll` later (upstream has the same open
-      question in their TODO).
+- [x] MSVC CRT: documented in the win-x64 THIRD-PARTY.md — no Microsoft
+      runtime DLLs shipped, VC++ 2015–2022 Redistributable (x64) required.
+      Revisit app-local `msvcp140.dll`/`vcruntime140*.dll` later (upstream
+      has the same open question in their TODO).
 - [ ] Verify empirically whether NuGet `runtimes/<rid>/native/` preserves the
       `pathime-data/` subtree on current SDKs; if it does, the
       `buildTransitive` .targets copy step can be simplified away.
