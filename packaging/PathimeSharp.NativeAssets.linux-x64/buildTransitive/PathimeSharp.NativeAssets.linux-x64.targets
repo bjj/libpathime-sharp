@@ -1,14 +1,21 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- pathime-data must sit beside libpathime.so at runtime. The libraries
-       flow through the standard runtimes/linux-x64/native mechanism; the
-       dictionary tree is copied by this target because runtimes/native
-       subtree handling is not reliable across SDKs (see repo TODO.md). -->
-  <ItemGroup>
-    <PathimeDataFiles Include="$(MSBuildThisFileDirectory)..\data\pathime-data\**\*" />
-  </ItemGroup>
-  <Target Name="CopyPathimeData" AfterTargets="Build" Condition="'@(PathimeDataFiles)' != ''">
-    <Copy SourceFiles="@(PathimeDataFiles)"
-          DestinationFiles="@(PathimeDataFiles->'$(OutDir)pathime-data\%(RecursiveDir)%(Filename)%(Extension)')"
-          SkipUnchangedFiles="true" />
+  <!-- pathime-data ships under runtimes/linux-x64/native/pathime-data, which
+       a plain `dotnet build` copies subtree-intact beside the library — where
+       module-relative resolution looks. A RID-specific publish instead
+       flattens every native asset into the publish root, dropping directory
+       structure; this target restores the data tree there (pathime-data/
+       beside the flattened library). A RID-less publish keeps the runtimes/
+       layout and is left untouched: its entries still carry pathime-data in
+       their RelativePath, so the second condition excludes them. -->
+  <Target Name="PathimeRestoreDataTreeLinuxX64" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <_PathimeFlattenedData Include="@(ResolvedFileToPublish)"
+          Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(ResolvedFileToPublish.FullPath)', '[\\/]pathime-data[\\/]')) and !$([System.Text.RegularExpressions.Regex]::IsMatch('%(ResolvedFileToPublish.RelativePath)', 'pathime-data'))" />
+      <ResolvedFileToPublish Remove="@(_PathimeFlattenedData)" />
+      <ResolvedFileToPublish Include="@(_PathimeFlattenedData)">
+        <RelativePath>pathime-data/$([System.Text.RegularExpressions.Regex]::Replace('%(_PathimeFlattenedData.FullPath)', '^.*[\\/]pathime-data[\\/]', ''))</RelativePath>
+      </ResolvedFileToPublish>
+      <_PathimeFlattenedData Remove="@(_PathimeFlattenedData)" />
+    </ItemGroup>
   </Target>
 </Project>

@@ -66,20 +66,19 @@ Ordered; each step assumes the previous ones.
       **flattens** native assets into the publish root. So the subtree alone
       cannot carry `pathime-data/`; some copy step stays. The same
       experiment exposed the next item.
-- [ ] **End-to-end consumer test of the native packages** — the current
-      `.targets` arrangement has two likely gaps, neither yet exercised by a
-      real consumer: (1) plain `dotnet build` loads the dll from the
-      output's `runtimes/<rid>/native/`, but the .targets copies
-      `pathime-data/` to the OutDir root, not beside the dll, so default
-      module-relative data resolution misses it; (2) `dotnet publish`
-      ignores stray OutDir files, so the data is not published at all.
-      Candidate fix: ship the data under `runtimes/<rid>/native/pathime-data`
-      in the nuspec (covers build, subtree preserved) and replace the Copy
-      target with `None` items with `Link` +
-      `CopyToPublishDirectory=PreserveNewest` sourced from that same package
-      path (covers publish, one copy of the bytes in the nupkg). Verify
-      both layouts with a console consumer that actually calls
-      `Pathime.Init()` + `HasEngine`, then simplify the .targets.
+- [x] **End-to-end consumer test of the native packages** — the old
+      `.targets` OutDir copy had two real gaps (plain build loads the dll
+      from the output's `runtimes/<rid>/native/` with no data beside it;
+      publish ignores stray OutDir files entirely). Fixed: the nuspecs ship
+      `pathime-data/` under `runtimes/<rid>/native/` (a plain build copies
+      that subtree intact beside the library), and the buildTransitive
+      .targets now only rewrite `ResolvedFileToPublish` RelativePaths after
+      `ComputeFilesToPublish`, restoring the tree a RID-specific publish
+      flattens; a RID-less publish keeps the runtimes/ layout and is left
+      alone. Verified with a console consumer calling `Pathime.Init()` +
+      `HasEngine` against the packed nupkgs from a local feed: 5/5 engines
+      in all six scenarios (build, `publish -r`, RID-less publish × Windows
+      and WSL Linux).
 
 ## Later
 

@@ -25,9 +25,11 @@ glib, sqlite3 and libuuid are NOT shipped — they come from the distro
   </metadata>
   <files>
     <file src="..\..\artifacts\nuget\linux-x64\native\*.so*" target="runtimes\linux-x64\native\" />
-    <!-- data/ is a non-convention folder: NuGet treats nothing here as an
-         asset; the buildTransitive targets copy the tree to the output. -->
-    <file src="..\..\artifacts\nuget\linux-x64\data\pathime-data\**" target="data\pathime-data\" />
+    <!-- Under native/ so a plain `dotnet build` lands the tree beside the
+         library, subtree intact, where module-relative resolution looks.
+         RID-specific publish flattens native assets; the buildTransitive
+         targets restore the tree in the publish output. -->
+    <file src="..\..\artifacts\nuget\linux-x64\data\pathime-data\**" target="runtimes\linux-x64\native\pathime-data\" />
     <file src="..\..\artifacts\nuget\linux-x64\licenses\**" target="licenses\" />
     <file src="buildTransitive\PathimeSharp.NativeAssets.linux-x64.targets" target="buildTransitive\" />
     <file src="THIRD-PARTY.md" target="" />
