@@ -11,10 +11,14 @@ permissions:
 # pack everything, push PathimeSharp to NuGet, and open a DRAFT GitHub
 # Release carrying all three nupkgs for review before publishing.
 #
+# NuGet auth is Trusted Publishing (OIDC), not a stored API key: a policy
+# on nuget.org (owner bjj / repo libpathime-sharp / workflow release.yml)
+# trades this workflow's OIDC token for a one-hour key at push time. The
+# NUGET_USER secret holds the nuget.org profile name the policy belongs to.
+#
 # The native-assets packages are packed and attached but NOT pushed to
-# NuGet: their THIRD-PARTY.md notices are still the stubs, and the stubs
-# say they must never ship. When the notices are complete, move the two
-# native nupkgs into the push step below.
+# NuGet until the THIRD-PARTY.md notices have been reviewed; when they
+# have, add the two native nupkgs to the push step below.
 
 jobs:
   natives:
@@ -57,6 +61,9 @@ jobs:
     # windows: nuget.exe is preinstalled, and the nuspecs are packed with it.
     runs-on: windows-2022
     timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write # OIDC token for NuGet Trusted Publishing
     steps:
       # The PathimeSharp package is pure managed code compiled from the repo;
       # the natives arrive as artifacts. No submodules needed.
@@ -92,10 +99,16 @@ jobs:
           nuget pack packaging/PathimeSharp.NativeAssets.win-x64/PathimeSharp.NativeAssets.win-x64.nuspec -Version ${{ steps.ver.outputs.version }} -OutputDirectory artifacts/release -NoDefaultExcludes
           nuget pack packaging/PathimeSharp.NativeAssets.linux-x64/PathimeSharp.NativeAssets.linux-x64.nuspec -Version ${{ steps.ver.outputs.version }} -OutputDirectory artifacts/release -NoDefaultExcludes
 
+      # The temporary key lives one hour — log in right before the push.
+      - name: NuGet login (OIDC → temp API key)
+        id: nuget-login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ secrets.NUGET_USER }}
       - name: Push PathimeSharp to NuGet
         run: >-
           dotnet nuget push artifacts/release/PathimeSharp.${{ steps.ver.outputs.version }}.nupkg
-          --api-key ${{ secrets.NUGET_API_KEY }}
+          --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
 
