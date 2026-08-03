@@ -21,16 +21,9 @@ only pyzy's LGPL files.
 | `hangul.dll` | libhangul, upstream unmodified (`github.com/libhangul/libhangul`) | LGPL-2.1 | `licenses/libhangul.txt` |
 | `anthy-unicode.dll` | anthy-unicode, built from `github.com/bjj/anthy-unicode` branch `libpathime` | LGPL-2.1 | `licenses/anthy-unicode.txt` |
 | `pyzy-1.0.dll` | pyzy, built from `github.com/bjj/pyzy` branch `libpathime` | LGPL-2.1 | `licenses/pyzy.txt` |
-| `glib-2.0-0.dll` | GLib (vcpkg-built) | LGPL-2.1-or-later | `licenses/glib.txt` |
-| `iconv-2.dll` | libiconv (vcpkg-built) | LGPL-2.1 | `licenses/libiconv.txt` |
-| `intl-8.dll` | gettext's libintl (vcpkg-built) | LGPL-2.1 | `licenses/gettext.txt` |
-| `pcre2-8.dll` | PCRE2 (vcpkg-built) | BSD-3-Clause | `licenses/pcre2.txt` |
-| `sqlite3.dll` | SQLite (vcpkg-built) | public domain | — |
 
-The vcpkg rows exist because Windows has no system copies of those libraries:
-pyzy needs glib and sqlite3, so the package carries the vcpkg-built DLL
-closure beside `pathime.dll`, the ordinary arrangement for a glib-using
-Windows program.
+No external DLL ships beside them. The one third-party component compiled
+in is SQLite (public domain), inside `pathime.dll` and `pyzy-1.0.dll`.
 
 **Not shipped: the Microsoft Visual C++ runtime.** The binaries are built
 with MSVC and need the Visual C++ 2015–2022 Redistributable (x64) on the
