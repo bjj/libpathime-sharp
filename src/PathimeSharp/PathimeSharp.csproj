@@ -4,7 +4,7 @@
     <RootNamespace>PathimeSharp</RootNamespace>
     <AssemblyName>PathimeSharp</AssemblyName>
     <PackageId>PathimeSharp</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.1.2</Version>
     <Description>C# binding for libpathime — CJK input method engines (Hangul, Anthy, Pinyin/Bopomofo, table-driven) behind one synchronous API.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>

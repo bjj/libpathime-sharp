@@ -16,7 +16,7 @@ glib, sqlite3 and libuuid are NOT shipped — they come from the distro
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
     <id>PathimeSharp.NativeAssets.linux-x64</id>
-    <version>0.1.0</version>
+    <version>0.1.2</version>
     <authors>Ben Jackson</authors>
     <description>Native libpathime binaries and dictionary data (linux-x64) for PathimeSharp: libpathime.so, its vendored backend libraries (libhangul, anthy-unicode, pyzy), and the pathime-data dictionaries. Reference alongside the PathimeSharp package. Requires the distro's glib, sqlite3 and libuuid (e.g. apt install libglib2.0-0 libsqlite3-0 libuuid1); built against Ubuntu 22.04's glibc. Contains LGPL-2.1 components and GPL-derived data files; see THIRD-PARTY.md.</description>
     <license type="file">THIRD-PARTY.md</license>
