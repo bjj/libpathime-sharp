@@ -72,6 +72,7 @@ namespace PathimeSharp
         public static void Init(string? dataDir = null, string? resourceDir = null)
         {
             LibraryLoader.EnsureLoaded();
+            CheckNativeVersion();
             IntPtr dataDirPtr = IntPtr.Zero;
             IntPtr resourceDirPtr = IntPtr.Zero;
             try
@@ -90,6 +91,28 @@ namespace PathimeSharp
             {
                 Utf8.Free(resourceDirPtr);
                 Utf8.Free(dataDirPtr);
+            }
+        }
+
+        // The native major.minor this binding is written against. libpathime's
+        // pre-1.0 promise is that compatibility holds within a minor and not
+        // across one (its SONAME tracks the minor for the same reason), so
+        // Init refuses anything else up front, rather than failing later on a
+        // missing entry point or a changed struct.
+        private const uint SupportedMajor = 0;
+        private const uint SupportedMinor = 1;
+
+        private static void CheckNativeVersion()
+        {
+            uint number = NativeMethods.pathime_version();
+            uint major = number / 1000000;
+            uint minor = number / 1000 % 1000;
+            if (major != SupportedMajor || minor != SupportedMinor)
+            {
+                throw new NotSupportedException(
+                    $"libpathime {Utf8.DecodeNulTerminated(NativeMethods.pathime_version_string())} " +
+                    $"is not supported by this binding, which is written against " +
+                    $"{SupportedMajor}.{SupportedMinor}.x");
             }
         }
 

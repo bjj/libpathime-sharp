@@ -14,64 +14,29 @@
       require the VC++ 2015–2022 Redistributable. Upstream tracks the same
       question.
 
-## Release hardening — from the 2026-08-02 three-repo review, in priority order
+## Release hardening — from the 2026-08-02 three-repo review
 
-An external review of libpathime and both bindings; every claim below was
-verified against this tree. The core library's share of the same review is in
-its own `TODO.md`.
+Implemented the same day (the workflows and `scripts/` carry the reasoning
+as comments): the NuGet push waits in its own job behind the
+`nuget-production` environment after the draft exists;
+`scripts/check-release-version.sh` guards the tag, the four version-bearing
+files and the submodule pin in CI and release; `scripts/test-packages.ps1`
+restores the packed packages into a consumer that references only the
+NativeAssets package and proves run, RID publish and RID-less publish;
+NativeAssets depend on exactly-matching PathimeSharp; `Pathime.Init` refuses
+a native library outside the supported major.minor; release artifacts are
+attested; releases carry a Unity `.tgz` with natives inside; dependabot and
+SECURITY.md exist. What remains:
 
-- [ ] **Gate the NuGet push behind a protected environment.** Today
-      `release.yml` pushes all three packages to NuGet.org *before* creating
-      the draft GitHub release, and NuGet only unlists — a bad version stays
-      downloadable forever. Split the push into its own job bound to a
-      `nuget-production` GitHub Environment with a required reviewer: the tag
-      still builds, packs, and drafts immediately; the push waits for one
-      click. **Ben: create the environment + required-reviewer rule in repo
-      settings** (restrict it to `v*` tags while there); the workflow change
-      rides on that.
-- [ ] **`scripts/check-release-version`, run in CI and release.** The tag
-      overrides every version at pack time, so nothing notices that
-      `PathimeSharp.csproj`, both nuspecs, and Unity's `package.json` all
-      still say 0.1.0 — and Unity git-URL consumers get whatever
-      `package.json` says. Fail if the tag, those four files, and the
-      libpathime submodule's tag disagree. The submodule's own release guard
-      (`libpathime/.github/workflows/release.yml`, "The tag names the built
-      version") is the model. Also: the Unity CHANGELOG still says
-      "0.1.0 - unreleased" — fix with the first use.
-- [ ] **Test the packages users install, not the staged tree.** CI never
-      runs `nuget pack` on the nuspecs (release-only today) and never
-      restores the packed nupkgs into anything. Add a consumer job: pack all
-      three, point a local feed at them, create a bare console app
-      referencing `PathimeSharp` + the RID's NativeAssets, `dotnet run`, then
-      `dotnet publish -r win-x64`/`linux-x64` and assert `pathime-data/`
-      survived the publish transform — the mechanical version of the one-time
-      local-feed validation recorded below. Release runs it before the
-      approval gate.
-- [ ] **NativeAssets depend on PathimeSharp** (decided 2026-08-02). Each
-      `PathimeSharp.NativeAssets.<rid>` nuspec gains a `<dependencies>` entry
-      on exactly `[X.Y.Z]` `PathimeSharp`, so installing the platform package
-      alone yields a working setup. GPL→MIT direction only: installing
-      `PathimeSharp` must never pull GPL assets transitively. The exact-pin
-      is what the version-guard item keeps honest.
-- [ ] **Reject an unsupported native library at init.** The binding never
-      checks `pathime_version()`; pre-1.0 the C library's ABI promise is
-      per-minor (its SONAME is moving to track that), so validate
-      major.minor at first load and fail with a clear message instead of
-      whatever a missing/changed symbol produces.
-- [ ] **Attest the release artifacts.** The core repo already runs
-      `actions/attest-build-provenance` over everything it publishes; add the
-      same over the nupkgs and demo bundle here (`attestations: write` +
-      `id-token: write` on the release job only).
-- [ ] **A Unity `.tgz` release artifact** (decided 2026-08-02). A versioned
-      UPM tarball with the win-x64/linux-x64 natives staged in, so the Unity
-      channel is installable without a native toolchain. GPL-3 as
-      distributed — say so in the artifact's own README. Until it exists,
-      the root README should call the git-URL install a **source-only** UPM
-      package at first mention (the caveat currently lives only in the
-      package README).
-- [ ] **Workflow hygiene.** `dependabot.yml` with `github-actions` +
-      `gitsubmodule` (the core repo's is the model — the latter turns the
-      submodule bump into an arriving PR); `SECURITY.md`.
+- [ ] **Ben, one-time, before the next tag:** create the `nuget-production`
+      GitHub Environment (Settings → Environments) with yourself as required
+      reviewer, restricted to `v*` tags — the workflow names it but only the
+      settings give it teeth. An unprotected environment approves silently.
+- [ ] **Release v0.1.2** in lockstep with libpathime and libpathime-python
+      (libpathime's RELEASING.md has the order). Before tagging: bump
+      `PathimeSharp.csproj`, both nuspecs, Unity `package.json` and its
+      CHANGELOG to 0.1.2, and the submodule to libpathime's v0.1.2 tag —
+      `scripts/check-release-version.sh v0.1.2` says when it is right.
 
 ## Record: v0.1.0 shipped 2026-08-01
 

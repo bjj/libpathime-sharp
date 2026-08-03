@@ -22,6 +22,15 @@ glib, sqlite3 and libuuid are NOT shipped — they come from the distro
     <license type="file">THIRD-PARTY.md</license>
     <projectUrl>https://github.com/bjj/libpathime-sharp</projectUrl>
     <tags>ime input-method cjk native pathime</tags>
+    <!-- GPL/native depends on MIT/managed, never the reverse: installing
+         this package alone gives a working setup, while installing
+         PathimeSharp alone never pulls GPL assets transitively. Exact pin —
+         the native payload and the binding release in lockstep, and the
+         binding checks the native version at Init. $version$ comes from
+         -Properties at pack time (the release workflow passes it). -->
+    <dependencies>
+      <dependency id="PathimeSharp" version="[$version$]" />
+    </dependencies>
   </metadata>
   <files>
     <file src="..\..\artifacts\nuget\linux-x64\native\*.so*" target="runtimes\linux-x64\native\" />

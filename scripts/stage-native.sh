@@ -38,10 +38,13 @@ copy_libs() { # dest
     for dir in "$lib_dir" "$vendored_dir"; do
         [ -d "$dir" ] || continue
         for f in "$dir"/*.so.*; do
+            # Soname symlinks only: the fully-versioned real file is a
+            # regular file, and dereferencing the link ships it under the
+            # soname's name. A spelling test cannot draw this line —
+            # libpathime's pre-1.0 SONAME carries two components
+            # (libpathime.so.0.1) just like a fully-versioned name.
+            [ -L "$f" ] || continue
             name="$(basename "$f")"
-            case "$name" in
-                *.so.*.*) continue ;; # fully-versioned; its soname link covers it
-            esac
             cp -L "$f" "$dest/$name"
         done
     done

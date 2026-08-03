@@ -17,7 +17,7 @@ only pyzy's LGPL files.
 
 | File | Component | Licence | Text |
 |---|---|---|---|
-| `libpathime.so`, `libpathime.so.0` | libpathime | MIT | `licenses/libpathime.txt` |
+| `libpathime.so`, `libpathime.so.0.1` | libpathime | MIT | `licenses/libpathime.txt` |
 | `libhangul.so.1` | libhangul, upstream unmodified (`github.com/libhangul/libhangul`) | LGPL-2.1 | `licenses/libhangul.txt` |
 | `libanthy-unicode.so.0`, `libanthydic-unicode.so.0`, `libanthyinput-unicode.so.0` | anthy-unicode, built from `github.com/bjj/anthy-unicode` branch `libpathime` | LGPL-2.1 | `licenses/anthy-unicode.txt` |
 | `libpyzy-1.0.so.1` | pyzy, built from `github.com/bjj/pyzy` branch `libpathime` | LGPL-2.1 | `licenses/pyzy.txt` |
