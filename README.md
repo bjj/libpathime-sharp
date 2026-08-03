@@ -32,7 +32,7 @@ git config --global core.autocrlf input
 
 git clone https://github.com/microsoft/vcpkg C:\dev\vcpkg
 C:\dev\vcpkg\bootstrap-vcpkg.bat
-C:\dev\vcpkg\vcpkg install glib sqlite3
+C:\dev\vcpkg\vcpkg install --triplet x64-windows-static-md sqlite3
 $env:VCPKG_ROOT = "C:\dev\vcpkg"
 
 git submodule update --init --recursive
