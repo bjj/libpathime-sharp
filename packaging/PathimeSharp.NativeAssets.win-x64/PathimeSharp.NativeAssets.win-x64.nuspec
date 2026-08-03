@@ -10,7 +10,7 @@ Pack with:
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
     <id>PathimeSharp.NativeAssets.win-x64</id>
-    <version>0.1.2</version>
+    <version>0.1.3</version>
     <authors>Ben Jackson</authors>
     <description>Native libpathime binaries and dictionary data (win-x64) for PathimeSharp: pathime.dll, its vendored backend libraries (libhangul, anthy-unicode, pyzy and their dependencies), and the pathime-data dictionaries. Reference alongside the PathimeSharp package. Contains LGPL-2.1 components and GPL-derived data files; see THIRD-PARTY.md.</description>
     <license type="file">THIRD-PARTY.md</license>
