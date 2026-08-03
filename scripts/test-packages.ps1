@@ -37,7 +37,10 @@ function Invoke-Checked([scriptblock]$Step) {
 }
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$work = Join-Path $repoRoot "artifacts/consumer"
+# Outside the repo, on purpose: a consumer created under the repo inherits
+# Directory.Build.props (which pins C# 9 for Unity's sake) and stops being
+# a plain consumer.
+$work = Join-Path ([System.IO.Path]::GetTempPath()) "pathime-consumer-test"
 $feed = Join-Path $work "feed"
 $app = Join-Path $work "app"
 if (Test-Path $work) { Remove-Item -Recurse -Force $work }
