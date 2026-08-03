@@ -54,7 +54,7 @@ runs:
       run: |
         sudo apt-get update
         sudo apt-get install -y ninja-build pkg-config \
-          libglib2.0-dev libsqlite3-dev uuid-dev
+          libsqlite3-dev uuid-dev
 
     - name: Resolve vcpkg baseline
       if: runner.os == 'Windows' && steps.native.outputs.cache-hit != 'true'
@@ -63,7 +63,7 @@ runs:
       run: echo "rev=$(git -C C:\vcpkg rev-parse HEAD)" >> $env:GITHUB_OUTPUT
     # restore/save rather than the combined action: the combined form saves
     # only when the whole job succeeds, and a later failure must not throw
-    # away a from-source glib build (~25 minutes). The prefix fallback
+    # away the from-source builds. The prefix fallback
     # restores the newest previous tree when the image's vcpkg rev moved,
     # making `vcpkg install` a near-no-op.
     - name: Restore vcpkg installed tree
@@ -74,10 +74,10 @@ runs:
         path: C:\vcpkg\installed
         key: vcpkg-${{ inputs.image }}-${{ steps.vcpkg.outputs.rev }}
         restore-keys: vcpkg-${{ inputs.image }}-
-    - name: Install pyzy's dependencies (vcpkg)
+    - name: Install external dependencies (vcpkg)
       if: runner.os == 'Windows' && steps.native.outputs.cache-hit != 'true'
       shell: pwsh
-      run: vcpkg install glib:x64-windows sqlite3:x64-windows pkgconf:x64-windows
+      run: vcpkg install sqlite3:x64-windows-static-md
     - name: Save vcpkg installed tree
       if: runner.os == 'Windows' && steps.native.outputs.cache-hit != 'true' && steps.vcpkg-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

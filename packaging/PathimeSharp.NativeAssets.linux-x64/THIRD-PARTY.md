@@ -22,10 +22,10 @@ only pyzy's LGPL files.
 | `libanthy-unicode.so.0`, `libanthydic-unicode.so.0`, `libanthyinput-unicode.so.0` | anthy-unicode, built from `github.com/bjj/anthy-unicode` branch `libpathime` | LGPL-2.1 | `licenses/anthy-unicode.txt` |
 | `libpyzy-1.0.so.1` | pyzy, built from `github.com/bjj/pyzy` branch `libpathime` | LGPL-2.1 | `licenses/pyzy.txt` |
 
-**Nothing else ships.** GLib (LGPL-2.1-or-later), SQLite3 (public domain) and
-libuuid (Modified BSD) are loaded from the system — install the distro's
-`libglib2.0-0`, `libsqlite3-0` and `libuuid1` (or equivalents). The package
-deliberately carries no copy of them.
+**Nothing else ships.** SQLite (public domain) and libuuid (Modified BSD)
+are loaded from the system — install the distro's `libsqlite3-0` and
+`libuuid1` (or equivalents). The package deliberately carries no copy of
+them.
 
 ## Data files (`data/pathime-data/`)
 
