@@ -2,23 +2,26 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
 
 permissions:
-  contents: write
+  contents: read
 
-# Tag vX.Y.Z → build natives (same cache as CI, via the shared action),
-# pack everything, push the packages to NuGet, and open a DRAFT GitHub
-# Release carrying the three nupkgs and the runnable demo bundle for
-# review before publishing.
+# Tag vX.Y.Z → build natives (same cache as CI, via the shared action) and
+# run the packed-package consumer test on each platform → pack everything,
+# bundle the demo and the Unity .tgz, attest, and open a DRAFT GitHub
+# Release → wait at the nuget-production environment → push to NuGet.
+#
+# The gate is the point: NuGet.org cannot delete, only unlist, so nothing
+# reaches it until a human has approved the `push` job — review the draft
+# release first. The environment (Settings → Environments →
+# nuget-production) carries a required reviewer and is restricted to v*
+# tags; the workflow only names it.
 #
 # NuGet auth is Trusted Publishing (OIDC), not a stored API key: a policy
 # on nuget.org (owner bjj / repo libpathime-sharp / workflow release.yml)
 # trades this workflow's OIDC token for a one-hour key at push time. The
 # NUGET_USER secret holds the nuget.org profile name the policy belongs to.
-#
-# All three packages push: the native packages' THIRD-PARTY.md notices
-# were completed and reviewed (2026-08-01) before this was enabled.
 
 jobs:
   natives:
@@ -49,6 +52,15 @@ jobs:
         with:
           rid: ${{ matrix.rid }}
           image: ${{ matrix.os }}
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 8.0.x
+      # The same consumer test CI runs, on the exact trees this release
+      # ships: packed packages into a local feed, a consumer that references
+      # only the NativeAssets package, run + RID publish + RID-less publish.
+      - name: Consumer test from packed packages
+        shell: pwsh
+        run: scripts/test-packages.ps1 -Rid ${{ matrix.rid }}
       - name: Upload staged native tree
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -63,16 +75,26 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: write
-      id-token: write # OIDC token for NuGet Trusted Publishing
+      id-token: write
+      attestations: write
     steps:
       # The PathimeSharp package is pure managed code compiled from the repo;
-      # the natives arrive as artifacts. No submodules needed.
+      # the natives arrive as artifacts. No submodules needed — the version
+      # check reads the submodule pin from the superproject tree.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Version from tag
         id: ver
         shell: bash
         run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      # Tag ↔ csproj ↔ nuspecs ↔ Unity package.json ↔ submodule pin. The
+      # packs below override versions from the tag, but Unity git-URL
+      # consumers receive exactly what package.json says — so everything
+      # has to actually agree, not merely be overridden.
+      - name: Version-bearing files agree with the tag
+        shell: bash
+        run: scripts/check-release-version.sh "$GITHUB_REF_NAME"
 
       - name: Download staged native trees
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -94,17 +116,13 @@ jobs:
           -p:Version=${{ steps.ver.outputs.version }}
           -p:ContinuousIntegrationBuild=true
           -o artifacts/release
+      # -Properties version= feeds the $version$ token in the nuspecs'
+      # exact-pin dependency on PathimeSharp.
       - name: Pack native-assets packages
         run: |
-          nuget pack packaging/PathimeSharp.NativeAssets.win-x64/PathimeSharp.NativeAssets.win-x64.nuspec -Version ${{ steps.ver.outputs.version }} -OutputDirectory artifacts/release -NoDefaultExcludes
-          nuget pack packaging/PathimeSharp.NativeAssets.linux-x64/PathimeSharp.NativeAssets.linux-x64.nuspec -Version ${{ steps.ver.outputs.version }} -OutputDirectory artifacts/release -NoDefaultExcludes
+          nuget pack packaging/PathimeSharp.NativeAssets.win-x64/PathimeSharp.NativeAssets.win-x64.nuspec -Version ${{ steps.ver.outputs.version }} -Properties version=${{ steps.ver.outputs.version }} -OutputDirectory artifacts/release -NoDefaultExcludes
+          nuget pack packaging/PathimeSharp.NativeAssets.linux-x64/PathimeSharp.NativeAssets.linux-x64.nuspec -Version ${{ steps.ver.outputs.version }} -Properties version=${{ steps.ver.outputs.version }} -OutputDirectory artifacts/release -NoDefaultExcludes
 
-      # The temporary key lives one hour — log in right before the push.
-      - name: NuGet login (OIDC → temp API key)
-        id: nuget-login
-        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
-        with:
-          user: ${{ secrets.NUGET_USER }}
       # The runnable demo: self-contained publish (no SDK needed to run it),
       # with the staged natives, dictionaries and notices flat beside the
       # exe — pathime.dll loads via default probing from the exe directory.
@@ -120,17 +138,31 @@ jobs:
           Copy-Item packaging/demo/THIRD-PARTY.md $bundle/
           Compress-Archive -Path $bundle -DestinationPath "artifacts/release/PathimeSharp.Demo-${{ steps.ver.outputs.version }}-win-x64.zip"
 
-      # pwsh enumerates the nupkgs itself: dotnet nuget push does not expand
-      # the * glob on Windows and fails with "File does not exist".
-      - name: Push packages to NuGet
+      # The installable Unity channel: the UPM package with both platforms'
+      # natives staged in, exactly as scripts/stage-native.* lay them out
+      # locally (trailing ~ hides data and notices from Unity's importer).
+      # GPL-3 as distributed — the dictionaries ride inside — which the
+      # release notes state.
+      - name: Bundle the Unity package (.tgz with natives)
+        shell: pwsh
         run: |
-          $failed = $false
-          Get-ChildItem artifacts/release/*.nupkg | ForEach-Object {
-            dotnet nuget push $_.FullName --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-            if ($LASTEXITCODE -ne 0) { $failed = $true }
+          $pkg = "unity/com.ben.pathime"
+          foreach ($p in @(@("Windows", "win-x64", "*.dll"), @("Linux", "linux-x64", "*.so*"))) {
+            $dest = "$pkg/Plugins/$($p[0])/x86_64"
+            New-Item -ItemType Directory -Force $dest | Out-Null
+            Copy-Item "artifacts/nuget/$($p[1])/native/$($p[2])" $dest/
+            Copy-Item -Recurse "artifacts/nuget/$($p[1])/data/pathime-data" "$dest/pathime-data~"
+            Copy-Item -Recurse "artifacts/nuget/$($p[1])/licenses" "$dest/licenses~"
           }
-          if ($failed) { exit 1 }
+          npm pack ./$pkg --pack-destination artifacts/release
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
+      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: artifacts/release/*
+
+      # Drafted BEFORE anything is pushed anywhere: review this, then approve
+      # the push job below.
       - name: Draft GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -140,4 +172,40 @@ jobs:
           --draft
           --title "$GITHUB_REF_NAME"
           --generate-notes
-          artifacts/release/*.nupkg artifacts/release/*.zip
+          --notes "Unity: \`com.ben.pathime-${GITHUB_REF_NAME#v}.tgz\` is the UPM package with win-x64/linux-x64 natives and dictionaries inside — GPL-3 as distributed. The NuGet packages and the demo bundle carry the same natives."
+          artifacts/release/*.nupkg artifacts/release/*.zip artifacts/release/*.tgz
+
+      - name: Upload packages for the push job
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-packages
+          path: artifacts/release/*.nupkg
+          if-no-files-found: error
+
+  # Held by the nuget-production environment's required reviewer. Everything
+  # above ran already; approving this job is the single irreversible step.
+  push:
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: nuget-production
+    permissions:
+      id-token: write # OIDC token for NuGet Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-packages
+          path: packages
+      # The temporary key lives one hour — log in right before the push.
+      - name: NuGet login (OIDC → temp API key)
+        id: nuget-login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - name: Push packages to NuGet
+        run: |
+          for f in packages/*.nupkg; do
+            dotnet nuget push "$f" \
+              --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
+              --source https://api.nuget.org/v3/index.json --skip-duplicate
+          done

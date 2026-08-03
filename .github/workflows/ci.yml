@@ -69,8 +69,17 @@ jobs:
       - name: Test
         run: dotnet test
 
-      - name: Pack smoke check
-        run: dotnet pack src/PathimeSharp/PathimeSharp.csproj -c Release -o artifacts/pack
+      - name: Version-bearing files agree
+        shell: bash
+        run: scripts/check-release-version.sh
+
+      # The packages users install, not the staged tree: pack all three, put
+      # them in a local feed, and run a consumer that references only the
+      # NativeAssets package (PathimeSharp must arrive through its
+      # dependency) as a build, a RID publish, and a RID-less publish.
+      - name: Consumer test from packed packages
+        shell: pwsh
+        run: scripts/test-packages.ps1 -Rid ${{ matrix.rid }}
 
       # Input for the release job and for local debugging: the nuspec source
       # layout (native libs + pathime-data), exactly as staged.

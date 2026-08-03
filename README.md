@@ -111,9 +111,20 @@ displaying libpathime output, not just the demo.
 ## Unity
 
 `unity/com.ben.pathime` is a Unity package (UPM) containing the same binding
-source plus a loader helper and a build processor for desktop players; add it
-from disk or by git URL with `?path=/unity/com.ben.pathime`. Stage natives
-into it with `scripts\stage-native.ps1 -Targets unity`, then call
-`PathimeSharp.Unity.PathimeUnity.Initialize()` once at startup. See the
-package README for the support envelope (desktop-first; IL2CPP designed-for
-but not yet smoke-tested).
+source plus a loader helper and a build processor for desktop players. Two
+ways in:
+
+- **The release `.tgz`** (from v0.1.2): each
+  [release](https://github.com/bjj/libpathime-sharp/releases) carries
+  `com.ben.pathime-<version>.tgz` with the win-x64/linux-x64 natives and
+  dictionaries already inside — install it from disk via the Package
+  Manager. GPL-3 as distributed, since the dictionaries ride along.
+- **By git URL** (`?path=/unity/com.ben.pathime`) — **source-only**: git
+  carries no native binaries, so the package compiles but cannot create
+  engines until you stage natives into it with
+  `scripts\stage-native.ps1 -Targets unity` (needs a local libpathime
+  install) or point `PATHIME_LIBRARY` at one.
+
+Either way, call `PathimeSharp.Unity.PathimeUnity.Initialize()` once at
+startup. See the package README for the support envelope (desktop-first;
+IL2CPP designed-for but not yet smoke-tested).

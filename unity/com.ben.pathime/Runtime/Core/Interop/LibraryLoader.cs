@@ -13,7 +13,7 @@ namespace PathimeSharp.Interop
     /// <item>The <c>PATHIME_LIBRARY</c> environment variable — a full path to
     /// the shared library.</item>
     /// <item>The platform's default library search
-    /// (<c>pathime.dll</c> / <c>libpathime.so.0</c> / <c>libpathime.so</c>).</item>
+    /// (<c>pathime.dll</c> / <c>libpathime.so.0.1</c> / <c>libpathime.so</c>).</item>
     /// </list>
     /// On Windows an explicit path is loaded with
     /// LOAD_WITH_ALTERED_SEARCH_PATH so the vendored backend DLLs sitting
@@ -152,10 +152,15 @@ namespace PathimeSharp.Interop
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // Default probing tries libpathime.so; installs commonly ship
-                // only the versioned soname.
-                if (NativeLibrary.TryLoad("libpathime.so.0", assembly, searchPath, out IntPtr soname))
+                // only the versioned soname — minor-tracking since 0.1.2,
+                // major-only before that.
+                if (NativeLibrary.TryLoad("libpathime.so.0.1", assembly, searchPath, out IntPtr soname))
                 {
                     return soname;
+                }
+                if (NativeLibrary.TryLoad("libpathime.so.0", assembly, searchPath, out IntPtr oldSoname))
+                {
+                    return oldSoname;
                 }
             }
 
