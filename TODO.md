@@ -14,29 +14,26 @@
       require the VC++ 2015–2022 Redistributable. Upstream tracks the same
       question.
 
-## Release hardening — from the 2026-08-02 three-repo review
+## Record: v0.1.2 shipped 2026-08-02
 
-Implemented the same day (the workflows and `scripts/` carry the reasoning
-as comments): the NuGet push waits in its own job behind the
-`nuget-production` environment after the draft exists;
-`scripts/check-release-version.sh` guards the tag, the four version-bearing
-files and the submodule pin in CI and release; `scripts/test-packages.ps1`
-restores the packed packages into a consumer that references only the
-NativeAssets package and proves run, RID publish and RID-less publish;
-NativeAssets depend on exactly-matching PathimeSharp; `Pathime.Init` refuses
-a native library outside the supported major.minor; release artifacts are
-attested; releases carry a Unity `.tgz` with natives inside; dependabot and
-SECURITY.md exist. What remains:
+The 2026-08-02 three-repo release review, adopted and shipped the same day,
+in lockstep with libpathime and libpathime-python (libpathime's RELEASING.md
+owns the order; there is no 0.1.1 here — libpathime used it for a macOS-only
+release). The reasoning lives in the artifacts:
 
-- [ ] **Ben, one-time, before the next tag:** create the `nuget-production`
-      GitHub Environment (Settings → Environments) with yourself as required
-      reviewer, restricted to `v*` tags — the workflow names it but only the
-      settings give it teeth. An unprotected environment approves silently.
-- [ ] **Release v0.1.2** in lockstep with libpathime and libpathime-python
-      (libpathime's RELEASING.md has the order). Before tagging: bump
-      `PathimeSharp.csproj`, both nuspecs, Unity `package.json` and its
-      CHANGELOG to 0.1.2, and the submodule to libpathime's v0.1.2 tag —
-      `scripts/check-release-version.sh v0.1.2` says when it is right.
+- The gated release shape (draft first, NuGet push held by the
+  `nuget-production` environment's required reviewer): `release.yml` header.
+- Version lockstep enforcement (tag ↔ csproj ↔ nuspecs ↔ Unity package.json
+  ↔ submodule pin): `scripts/check-release-version.sh`, run by CI and
+  release.
+- Packed-package consumer proof (NativeAssets-only reference, PathimeSharp
+  transitive, run + RID publish + RID-less publish, `pathime-data` survives):
+  `scripts/test-packages.ps1`, run by CI and release.
+- NativeAssets → PathimeSharp exact-pin dependency, and the Init-time native
+  version check: the nuspecs' comments and `Pathime.CheckNativeVersion`.
+- New release artifacts: provenance attestations on everything, and
+  `com.ben.pathime-<version>.tgz` — the UPM package with both platforms'
+  natives and dictionaries inside, GPL-3 as distributed.
 
 ## Record: v0.1.0 shipped 2026-08-01
 
